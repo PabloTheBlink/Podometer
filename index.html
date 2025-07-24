@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StepFlow - Premium Pedometer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        },
+                        success: {
+                            50: '#f0fdf4',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                        },
+                        warning: {
+                            50: '#fffbeb',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'pulse-slow': 'pulse 3s infinite',
+                        'bounce-gentle': 'bounceGentle 0.6s ease-out',
+                    },
+                    boxShadow: {
+                        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
+                        'card': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                        'card-hover': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes bounceGentle {
+            0%, 20%, 53%, 80%, 100% { transform: translateY(0); }
+            40%, 43% { transform: translateY(-8px); }
+            70% { transform: translateY(-4px); }
+            90% { transform: translateY(-2px); }
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-hover-effect {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-hover-effect:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .step-counter-ring {
+            transform-origin: center;
+            transition: stroke-dasharray 0.3s ease-in-out;
+        }
+        .loading-shimmer {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+    </style>
+</head>
+<body class="h-full bg-gradient-to-br from-slate-50 to-slate-100 font-sans antialiased">
+    <div id="app" class="min-h-full">
+        <!-- Main Container -->
+        <div class="max-w-md mx-auto bg-white min-h-screen shadow-2xl relative overflow-hidden">
+            <!-- Background Gradient -->
+            <div class="absolute inset-0 gradient-bg opacity-5"></div>
+            
+            <!-- Header -->
+            <header class="relative z-10 px-6 pt-12 pb-8">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-primary-500 rounded-xl flex items-center justify-center shadow-lg">
+                            <i data-lucide="activity" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-2xl font-bold text-slate-900">StepFlow</h1>
+                            <p class="text-sm text-slate-500">Premium Pedometer</p>
+                        </div>
+                    </div>
+                    <button id="settingsBtn" class="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center hover:bg-slate-200 transition-colors">
+                        <i data-lucide="settings" class="w-5 h-5 text-slate-600"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Main Content -->
+            <main class="relative z-10 px-6 pb-6">
+                <!-- Permission Request Card -->
+                <div id="permissionCard" class="mb-6 p-6 bg-gradient-to-r from-primary-50 to-blue-50 rounded-2xl border border-primary-100 shadow-card">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-primary-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                            <i data-lucide="smartphone" class="w-8 h-8 text-white"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-slate-900 mb-2">Habilitar Sensor de Movimiento</h3>
+                        <p class="text-sm text-slate-600 mb-4">Para contar tus pasos necesitamos acceso al sensor de movimiento de tu dispositivo.</p>
+                        <button id="enableSensorBtn" class="w-full bg-primary-500 hover:bg-primary-600 text-white font-medium py-3 px-4 rounded-xl transition-colors shadow-lg hover:shadow-xl">
+                            Habilitar Sensor
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step Counter Circle -->
+                <div class="mb-8">
+                    <div class="relative w-64 h-64 mx-auto">
+                        <!-- Outer Ring -->
+                        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 200 200">
+                            <circle cx="100" cy="100" r="90" fill="none" stroke="#e2e8f0" stroke-width="8"/>
+                            <circle id="progressRing" cx="100" cy="100" r="90" fill="none" stroke="#3b82f6" stroke-width="8" 
+                                stroke-linecap="round" stroke-dasharray="0 565.5" class="step-counter-ring"/>
+                        </svg>
+                        
+                        <!-- Center Content -->
+                        <div class="absolute inset-0 flex flex-col items-center justify-center">
+                            <div class="text-center">
+                                <div class="mb-2">
+                                    <span id="stepCount" class="text-5xl font-bold text-slate-900 animate-bounce-gentle">0</span>
+                                </div>
+                                <p class="text-lg font-medium text-slate-600">pasos</p>
+                                <p class="text-sm text-slate-500 mt-1">hoy</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-slate-200 shadow-card card-hover-effect">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-success-100 rounded-xl flex items-center justify-center">
+                                <i data-lucide="map-pin" class="w-5 h-5 text-success-600"></i>
+                            </div>
+                            <div>
+                                <p class="text-2xl font-bold text-slate-900" id="distanceCount">0.0</p>
+                                <p class="text-sm text-slate-500">km recorridos</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-slate-200 shadow-card card-hover-effect">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-warning-100 rounded-xl flex items-center justify-center">
+                                <i data-lucide="flame" class="w-5 h-5 text-warning-600"></i>
+                            </div>
+                            <div>
+                                <p class="text-2xl font-bold text-slate-900" id="calorieCount">0</p>
+                                <p class="text-sm text-slate-500">calorías</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Goal Progress -->
+                <div class="bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-slate-200 shadow-card card-hover-effect mb-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-lg font-semibold text-slate-900">Meta Diaria</h3>
+                        <span class="text-sm font-medium text-primary-600" id="goalPercentage">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-200 rounded-full h-3 mb-3">
+                        <div id="goalProgress" class="bg-gradient-to-r from-primary-500 to-primary-600 h-3 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+                    </div>
+                    <div class="flex justify-between text-sm text-slate-600">
+                        <span>0 pasos</span>
+                        <span>10,000 pasos</span>
+                    </div>
+                </div>
+
+                <!-- Activity Status -->
+                <div class="bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-slate-200 shadow-card card-hover-effect">
+                    <div class="flex items-center space-x-4">
+                        <div id="activityIndicator" class="w-4 h-4 bg-slate-400 rounded-full"></div>
+                        <div>
+                            <p class="font-medium text-slate-900" id="activityStatus">Sensor Deshabilitado</p>
+                            <p class="text-sm text-slate-500" id="lastUpdate">Habilita el sensor para comenzar</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Settings Modal -->
+            <div id="settingsModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 opacity-0 pointer-events-none transition-all duration-300">
+                <div class="flex items-end justify-center min-h-screen p-4">
+                    <div class="bg-white rounded-t-3xl w-full max-w-md transform translate-y-full transition-transform duration-300" id="settingsContent">
+                        <div class="p-6">
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 class="text-xl font-bold text-slate-900">Configuración</h2>
+                                <button id="closeSettingsBtn" class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors">
+                                    <i data-lucide="x" class="w-5 h-5 text-slate-600"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+                                    <div>
+                                        <p class="font-medium text-slate-900">Meta Diaria</p>
+                                        <p class="text-sm text-slate-500">Pasos objetivo por día</p>
+                                    </div>
+                                    <input id="dailyGoalInput" type="number" value="10000" min="1000" max="50000" step="500" 
+                                           class="w-20 px-3 py-1 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                </div>
+                                
+                                <div class="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+                                    <div>
+                                        <p class="font-medium text-slate-900">Sensibilidad</p>
+                                        <p class="text-sm text-slate-500">Ajustar detección de pasos</p>
+                                    </div>
+                                    <select id="sensitivitySelect" class="px-3 py-1 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                        <option value="low">Baja</option>
+                                        <option value="medium" selected>Media</option>
+                                        <option value="high">Alta</option>
+                                    </select>
+                                </div>
+                                
+                                <button id="resetDataBtn" class="w-full p-4 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors font-medium">
+                                    Reiniciar Datos
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class PremiumPedometer {
+            constructor() {
+                this.steps = 0;
+                this.distance = 0;
+                this.calories = 0;
+                this.dailyGoal = 10000;
+                this.sensitivity = 'medium';
+                
+                this.isActive = false;
+                this.sensorEnabled = false;
+                this.lastAcceleration = { x: 0, y: 0, z: 0 };
+                this.stepThreshold = 12;
+                this.stepCooldown = 200;
+                this.lastStepTime = 0;
+                
+                this.smoothingFactor = 0.8;
+                this.smoothedAcceleration = { x: 0, y: 0, z: 0 };
+                
+                this.loadData();
+                this.initializeUI();
+                this.bindEvents();
+                this.updateUI();
+            }
+
+            loadData() {
+                const savedData = localStorage.getItem('stepflow-data');
+                if (savedData) {
+                    const data = JSON.parse(savedData);
+                    const today = new Date().toDateString();
+                    
+                    if (data.date === today) {
+                        this.steps = data.steps || 0;
+                        this.distance = data.distance || 0;
+                        this.calories = data.calories || 0;
+                    }
+                }
+                
+                const settings = localStorage.getItem('stepflow-settings');
+                if (settings) {
+                    const config = JSON.parse(settings);
+                    this.dailyGoal = config.dailyGoal || 10000;
+                    this.sensitivity = config.sensitivity || 'medium';
+                    this.updateSensitivity();
+                }
+            }
+
+            saveData() {
+                const data = {
+                    date: new Date().toDateString(),
+                    steps: this.steps,
+                    distance: this.distance,
+                    calories: this.calories
+                };
+                localStorage.setItem('stepflow-data', JSON.stringify(data));
+                
+                const settings = {
+                    dailyGoal: this.dailyGoal,
+                    sensitivity: this.sensitivity
+                };
+                localStorage.setItem('stepflow-settings', JSON.stringify(settings));
+            }
+
+            updateSensitivity() {
+                const sensitivityMap = {
+                    'low': 15,
+                    'medium': 12,
+                    'high': 9
+                };
+                this.stepThreshold = sensitivityMap[this.sensitivity];
+            }
+
+            initializeUI() {
+                lucide.createIcons();
+                this.updateActivityStatus('Sensor Deshabilitado', false);
+            }
+
+            bindEvents() {
+                document.getElementById('enableSensorBtn').addEventListener('click', () => {
+                    this.requestSensorPermission();
+                });
+
+                document.getElementById('settingsBtn').addEventListener('click', () => {
+                    this.openSettings();
+                });
+
+                document.getElementById('closeSettingsBtn').addEventListener('click', () => {
+                    this.closeSettings();
+                });
+
+                document.getElementById('dailyGoalInput').addEventListener('change', (e) => {
+                    this.dailyGoal = parseInt(e.target.value);
+                    this.saveData();
+                    this.updateUI();
+                });
+
+                document.getElementById('sensitivitySelect').addEventListener('change', (e) => {
+                    this.sensitivity = e.target.value;
+                    this.updateSensitivity();
+                    this.saveData();
+                });
+
+                document.getElementById('resetDataBtn').addEventListener('click', () => {
+                    this.resetData();
+                });
+
+                // Close modal on backdrop click
+                document.getElementById('settingsModal').addEventListener('click', (e) => {
+                    if (e.target.id === 'settingsModal') {
+                        this.closeSettings();
+                    }
+                });
+            }
+
+            async requestSensorPermission() {
+                try {
+                    if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                        const permission = await DeviceMotionEvent.requestPermission();
+                        if (permission === 'granted') {
+                            this.enableSensor();
+                        } else {
+                            this.showError('Permiso denegado para acceder al sensor de movimiento');
+                        }
+                    } else if (window.DeviceMotionEvent) {
+                        this.enableSensor();
+                    } else {
+                        this.showError('Sensor de movimiento no disponible en este dispositivo');
+                    }
+                } catch (error) {
+                    console.error('Error requesting sensor permission:', error);
+                    this.showError('Error al solicitar permisos del sensor');
+                }
+            }
+
+            enableSensor() {
+                if (!this.sensorEnabled) {
+                    window.addEventListener('devicemotion', (event) => {
+                        this.handleDeviceMotion(event);
+                    });
+                    
+                    this.sensorEnabled = true;
+                    document.getElementById('permissionCard').style.display = 'none';
+                    this.updateActivityStatus('Esperando Movimiento', true);
+                    
+                    this.showSuccess('Sensor habilitado correctamente');
+                }
+            }
+
+            handleDeviceMotion(event) {
+                if (!event.accelerationIncludingGravity) return;
+
+                const acceleration = event.accelerationIncludingGravity;
+                
+                // Apply smoothing filter
+                this.smoothedAcceleration.x = this.smoothingFactor * this.smoothedAcceleration.x + 
+                                            (1 - this.smoothingFactor) * (acceleration.x || 0);
+                this.smoothedAcceleration.y = this.smoothingFactor * this.smoothedAcceleration.y + 
+                                            (1 - this.smoothingFactor) * (acceleration.y || 0);
+                this.smoothedAcceleration.z = this.smoothingFactor * this.smoothedAcceleration.z + 
+                                            (1 - this.smoothingFactor) * (acceleration.z || 0);
+
+                // Calculate magnitude of acceleration change
+                const deltaX = this.smoothedAcceleration.x - this.lastAcceleration.x;
+                const deltaY = this.smoothedAcceleration.y - this.lastAcceleration.y;
+                const deltaZ = this.smoothedAcceleration.z - this.lastAcceleration.z;
+                
+                const magnitude = Math.sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ);
+                const currentTime = Date.now();
+
+                // Detect step if magnitude exceeds threshold and cooldown has passed
+                if (magnitude > this.stepThreshold && 
+                    currentTime - this.lastStepTime > this.stepCooldown) {
+                    this.recordStep();
+                    this.lastStepTime = currentTime;
+                }
+
+                this.lastAcceleration = { ...this.smoothedAcceleration };
+                
+                // Update activity status
+                if (magnitude > 2) {
+                    this.updateActivityStatus('Caminando', true);
+                    this.isActive = true;
+                } else if (this.isActive) {
+                    this.updateActivityStatus('En Reposo', true);
+                    this.isActive = false;
+                }
+            }
+
+            recordStep() {
+                this.steps++;
+                this.distance = (this.steps * 0.000762); // Average step = 0.762 meters
+                this.calories = Math.floor(this.steps * 0.05); // Rough estimate
+                
+                this.updateUI();
+                this.saveData();
+                
+                // Animate step counter
+                this.animateStepCounter();
+                
+                // Check goal achievement
+                if (this.steps === this.dailyGoal) {
+                    this.showSuccess('¡Felicitaciones! Has alcanzado tu meta diaria');
+                }
+            }
+
+            animateStepCounter() {
+                const stepElement = document.getElementById('stepCount');
+                stepElement.classList.remove('animate-bounce-gentle');
+                void stepElement.offsetWidth; // Force reflow
+                stepElement.classList.add('animate-bounce-gentle');
+            }
+
+            updateUI() {
+                document.getElementById('stepCount').textContent = this.steps.toLocaleString();
+                document.getElementById('distanceCount').textContent = this.distance.toFixed(2);
+                document.getElementById('calorieCount').textContent = this.calories.toLocaleString();
+                
+                const goalPercentage = Math.min(100, (this.steps / this.dailyGoal) * 100);
+                document.getElementById('goalPercentage').textContent = `${Math.floor(goalPercentage)}%`;
+                document.getElementById('goalProgress').style.width = `${goalPercentage}%`;
+                
+                // Update progress ring
+                const circumference = 2 * Math.PI * 90;
+                const strokeDasharray = `${(goalPercentage / 100) * circumference} ${circumference}`;
+                document.getElementById('progressRing').style.strokeDasharray = strokeDasharray;
+                
+                // Update settings UI
+                document.getElementById('dailyGoalInput').value = this.dailyGoal;
+                document.getElementById('sensitivitySelect').value = this.sensitivity;
+            }
+
+            updateActivityStatus(status, isEnabled = false) {
+                const indicator = document.getElementById('activityIndicator');
+                const statusText = document.getElementById('activityStatus');
+                const updateText = document.getElementById('lastUpdate');
+                
+                statusText.textContent = status;
+                
+                if (isEnabled) {
+                    indicator.className = 'w-4 h-4 bg-success-500 rounded-full animate-pulse';
+                    updateText.textContent = `Actualizado: ${new Date().toLocaleTimeString()}`;
+                } else {
+                    indicator.className = 'w-4 h-4 bg-slate-400 rounded-full';
+                    updateText.textContent = 'Habilita el sensor para comenzar';
+                }
+            }
+
+            openSettings() {
+                const modal = document.getElementById('settingsModal');
+                const content = document.getElementById('settingsContent');
+                
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                setTimeout(() => {
+                    content.classList.remove('translate-y-full');
+                }, 10);
+            }
+
+            closeSettings() {
+                const modal = document.getElementById('settingsModal');
+                const content = document.getElementById('settingsContent');
+                
+                content.classList.add('translate-y-full');
+                setTimeout(() => {
+                    modal.classList.add('opacity-0', 'pointer-events-none');
+                }, 300);
+            }
+
+            resetData() {
+                if (confirm('¿Estás seguro de que quieres reiniciar todos los datos? Esta acción no se puede deshacer.')) {
+                    this.steps = 0;
+                    this.distance = 0;
+                    this.calories = 0;
+                    this.updateUI();
+                    this.saveData();
+                    this.closeSettings();
+                    this.showSuccess('Datos reiniciados correctamente');
+                }
+            }
+
+            showSuccess(message) {
+                this.showNotification(message, 'success');
+            }
+
+            showError(message) {
+                this.showNotification(message, 'error');
+            }
+
+            showNotification(message, type = 'info') {
+                // Create notification element
+                const notification = document.createElement('div');
+                notification.className = `fixed top-4 left-4 right-4 z-50 p-4 rounded-xl shadow-lg transform translate-y-[-100px] transition-all duration-300 ${
+                    type === 'success' ? 'bg-success-500 text-white' : 
+                    type === 'error' ? 'bg-red-500 text-white' : 
+                    'bg-slate-800 text-white'
+                }`;
+                notification.textContent = message;
+                
+                document.body.appendChild(notification);
+                
+                // Animate in
+                setTimeout(() => {
+                    notification.style.transform = 'translateY(0)';
+                }, 10);
+                
+                // Remove after 3 seconds
+                setTimeout(() => {
+                    notification.style.transform = 'translateY(-100px)';
+                    setTimeout(() => {
+                        document.body.removeChild(notification);
+                    }, 300);
+                }, 3000);
+            }
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', () => {
+            new PremiumPedometer();
+        });
+    </script>
+</body>
+</html>
