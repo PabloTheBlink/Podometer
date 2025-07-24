@@ -1,0 +1,74 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.pablomsj.stepflow" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <name>StepFlow</name>
+    <description>Premium pedometer app to track your daily steps, distance, and calories</description>
+    <author email="dev@stepflow.app" href="https://stepflow.app">
+        StepFlow Team
+    </author>
+    <content src="index.html" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+    <access origin="*" />
+    <allow-navigation href="*" />
+    <platform name="ios">
+        <preference name="deployment-target" value="12.0" />
+        
+        <!-- HealthKit usage descriptions -->
+        <config-file parent="NSHealthShareUsageDescription" target="*-Info.plist">
+            <string>Esta aplicación necesita acceso a HealthKit para leer tu número de pasos y calcular distancia y calorías quemadas.</string>
+        </config-file>
+        <config-file parent="NSHealthUpdateUsageDescription" target="*-Info.plist">
+            <string>Esta aplicación necesita acceso a HealthKit para registrar tu actividad física.</string>
+        </config-file>
+        
+        <!-- Enable HealthKit capability -->
+        <config-file parent="com.apple.developer.healthkit" target="*-Debug.plist">
+            <true />
+        </config-file>
+        <config-file parent="com.apple.developer.healthkit" target="*-Release.plist">
+            <true />
+        </config-file>
+        
+        <!-- Add HealthKit to required device capabilities -->
+        <config-file parent="UIRequiredDeviceCapabilities" target="*-Info.plist">
+            <array>
+                <string>healthkit</string>
+            </array>
+        </config-file>
+        
+        <!-- Background modes for health data -->
+        <config-file parent="UIBackgroundModes" target="*-Info.plist">
+            <array>
+                <string>background-processing</string>
+            </array>
+        </config-file>
+    </platform>
+    <platform name="android">
+        <config-file parent="/manifest" target="AndroidManifest.xml" xmlns:android="http://schemas.android.com/apk/res/android">
+            <uses-permission android:name="android.permission.health.READ_STEPS" />
+            <uses-permission android:name="android.permission.health.READ_DISTANCE" />
+            <uses-permission android:name="android.permission.health.READ_TOTAL_CALORIES_BURNED" />
+            <uses-permission android:name="android.permission.health.WRITE_STEPS" />
+            <uses-permission android:name="android.permission.health.WRITE_DISTANCE" />
+            <uses-permission android:name="android.permission.health.WRITE_TOTAL_CALORIES_BURNED" />
+        </config-file>
+        <config-file parent="/manifest/application" target="AndroidManifest.xml" xmlns:android="http://schemas.android.com/apk/res/android">
+            <activity android:exported="true" android:name="androidx.health.connect.client.PermissionController">
+                <intent-filter>
+                    <action android:name="androidx.health.platform.action.REQUEST_PERMISSIONS" />
+                </intent-filter>
+            </activity>
+        </config-file>
+        <preference name="android-targetSdkVersion" value="35" />
+        <preference name="android-compileSdkVersion" value="35" />
+        <preference name="android-minSdkVersion" value="26" />
+    </platform>
+    <preference name="DisallowOverscroll" value="true" />
+    <preference name="android-minSdkVersion" value="26" />
+    <preference name="BackupWebStorage" value="none" />
+    <preference name="SplashMaintainAspectRatio" value="true" />
+    <preference name="FadeSplashScreenDuration" value="300" />
+    <preference name="SplashShowOnlyFirstTime" value="false" />
+    <preference name="SplashScreen" value="screen" />
+    <preference name="SplashScreenDelay" value="3000" />
+</widget>

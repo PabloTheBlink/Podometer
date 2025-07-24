@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>StepFlow - Premium Pedometer</title>
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="light-content">
+    <meta name="apple-mobile-web-app-title" content="StepFlow">
+    <link rel="apple-touch-icon" href="./icon-192.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script type="text/javascript" src="cordova.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        },
+                        success: {
+                            50: '#f0fdf4',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                        },
+                        warning: {
+                            50: '#fffbeb',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'pulse-slow': 'pulse 3s infinite',
+                        'bounce-gentle': 'bounceGentle 0.6s ease-out',
+                    },
+                    boxShadow: {
+                        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
+                        'card': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                        'card-hover': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes bounceGentle {
+            0%, 20%, 53%, 80%, 100% { transform: translateY(0); }
+            40%, 43% { transform: translateY(-8px); }
+            70% { transform: translateY(-4px); }
+            90% { transform: translateY(-2px); }
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .gradient-header {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        }
+        
+        /* Safe area support for iOS */
+        .safe-area-top {
+            padding-top: constant(safe-area-inset-top, 20px);
+            padding-top: env(safe-area-inset-top, 20px);
+        }
+        .safe-area-bottom {
+            padding-bottom: constant(safe-area-inset-bottom, 20px);
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+        }
+        
+        /* More specific safe area handling */
+        @supports (padding-top: env(safe-area-inset-top)) {
+            .safe-area-top {
+                padding-top: calc(env(safe-area-inset-top) + 16px);
+            }
+        }
+        
+        /* Fallback for devices without safe area */
+        @media screen and (max-height: 700px) {
+            .safe-area-top {
+                padding-top: 44px;
+            }
+        }
+        
+        /* Modern dark theme */
+        .dark-gradient {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+        }
+        
+        .card-dark {
+            background: rgba(30, 41, 59, 0.95);
+            border: 1px solid rgba(100, 116, 139, 0.2);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .card-light {
+            background: rgba(255, 255, 255, 0.98);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .accent-gradient {
+            background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%);
+        }
+        
+        .metric-card {
+            transition: all 0.3s ease;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .progress-ring {
+            transition: stroke-dasharray 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Weekly chart styles */
+        .chart-bar {
+            transition: all 0.3s ease;
+            border-radius: 4px 4px 0 0;
+        }
+        
+        .chart-bar:hover {
+            opacity: 0.8;
+        }
+        .card-hover-effect {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-hover-effect:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .step-counter-ring {
+            transform-origin: center;
+            transition: stroke-dasharray 0.3s ease-in-out;
+        }
+        .loading-shimmer {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+    </style>
+</head>
+<body class="h-full font-sans antialiased">
+    <div id="app" class="min-h-full bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200">
+        <!-- Main Container -->
+        <div class="max-w-md mx-auto min-h-screen relative">
+            <!-- Header -->
+            <header class="px-6 safe-area-top pb-6 bg-white/80 backdrop-blur-md shadow-sm">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 accent-gradient rounded-2xl flex items-center justify-center shadow-lg">
+                            <i data-lucide="activity" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-2xl font-bold text-slate-900">StepFlow</h1>
+                            <p class="text-sm text-slate-600">Tu salud en movimiento</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button id="settingsBtn" class="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center hover:bg-slate-200 transition-colors">
+                            <i data-lucide="settings" class="w-5 h-5 text-slate-600"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Content -->
+            <main class="px-6 pb-6 safe-area-bottom space-y-6">
+                <!-- Permission Card -->
+                <div id="permissionCard" class="card-light p-6 rounded-2xl shadow-lg">
+                    <div class="text-center">
+                        <div class="w-16 h-16 accent-gradient rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                            <i data-lucide="heart-pulse" class="w-8 h-8 text-white"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-slate-900 mb-2">Conectando con HealthKit</h3>
+                        <p class="text-sm text-slate-600 mb-4">Obteniendo acceso a tus datos de salud para mostrar información precisa.</p>
+                        <button id="enableSensorBtn" class="w-full accent-gradient text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105">
+                            Usar Acelerómetro
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Main Stats Card -->
+                <div class="card-light p-8 rounded-3xl shadow-lg">
+                    <div class="text-center mb-8">
+                        <div class="relative w-48 h-48 mx-auto mb-6">
+                            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 200 200">
+                                <defs>
+                                    <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1" />
+                                        <stop offset="50%" style="stop-color:#3b82f6;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+                                    </linearGradient>
+                                </defs>
+                                <circle cx="100" cy="100" r="85" fill="none" stroke="#e2e8f0" stroke-width="6"/>
+                                <circle id="progressRing" cx="100" cy="100" r="85" fill="none" stroke="url(#progressGradient)" 
+                                    stroke-width="6" stroke-linecap="round" stroke-dasharray="0 534" class="progress-ring"/>
+                            </svg>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                <span id="stepCount" class="text-4xl font-bold text-slate-900">0</span>
+                                <p class="text-sm text-slate-500 mt-1">pasos hoy</p>
+                                <div class="mt-3 px-3 py-1 bg-slate-100 rounded-full">
+                                    <span id="goalPercentage" class="text-xs font-medium text-slate-600">0%</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Quick Stats -->
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="text-center">
+                                <div class="w-12 h-12 bg-cyan-100 rounded-xl flex items-center justify-center mx-auto mb-2">
+                                    <i data-lucide="map-pin" class="w-6 h-6 text-cyan-600"></i>
+                                </div>
+                                <p class="text-lg font-bold text-slate-900" id="distanceCount">0.0</p>
+                                <p class="text-xs text-slate-500">km</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center mx-auto mb-2">
+                                    <i data-lucide="flame" class="w-6 h-6 text-orange-600"></i>
+                                </div>
+                                <p class="text-lg font-bold text-slate-900" id="calorieCount">0</p>
+                                <p class="text-xs text-slate-500">kcal</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-2">
+                                    <i data-lucide="clock" class="w-6 h-6 text-green-600"></i>
+                                </div>
+                                <p class="text-lg font-bold text-slate-900" id="activeTime">0</p>
+                                <p class="text-xs text-slate-500">min</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Weekly Progress Chart -->
+                <div class="card-light p-6 rounded-2xl shadow-lg">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-slate-900">Progreso Semanal</h3>
+                        <button id="weeklyToggle" class="text-sm text-slate-500 hover:text-slate-700">Esta semana</button>
+                    </div>
+                    <div class="h-32 flex items-end justify-between space-x-2" id="weeklyChart">
+                        <!-- Chart bars will be generated by JavaScript -->
+                    </div>
+                    <div class="flex justify-between text-xs text-slate-500 mt-2" id="weekDayLabels">
+                        <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
+                    </div>
+                </div>
+
+                <!-- Achievement Section -->
+                <div class="card-light p-6 rounded-2xl shadow-lg">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-slate-900">Logros</h3>
+                        <i data-lucide="trophy" class="w-5 h-5 text-yellow-500"></i>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3" id="achievementsGrid">
+                        <!-- Achievement badges will be generated -->
+                    </div>
+                </div>
+
+                <!-- Activity Status -->
+                <div class="card-light p-4 rounded-2xl shadow-lg">
+                    <div class="flex items-center space-x-4">
+                        <div id="activityIndicator" class="w-4 h-4 bg-slate-400 rounded-full"></div>
+                        <div>
+                            <p class="font-medium text-slate-900" id="activityStatus">Sensor Deshabilitado</p>
+                            <p class="text-sm text-slate-500" id="lastUpdate">Habilita el sensor para comenzar</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Settings Modal -->
+            <div id="settingsModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 opacity-0 pointer-events-none transition-all duration-300">
+                <div class="flex items-end justify-center min-h-screen p-4 safe-area-bottom">
+                    <div class="card-light rounded-t-3xl w-full max-w-md transform translate-y-full transition-transform duration-300" id="settingsContent">
+                        <div class="p-6">
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 class="text-xl font-bold text-slate-900">Configuración</h2>
+                                <button id="closeSettingsBtn" class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors">
+                                    <i data-lucide="x" class="w-5 h-5 text-slate-600"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+                                    <div>
+                                        <p class="font-medium text-slate-900">Meta Diaria</p>
+                                        <p class="text-sm text-slate-500">Pasos objetivo por día</p>
+                                    </div>
+                                    <input id="dailyGoalInput" type="number" value="10000" min="1000" max="50000" step="500" 
+                                           class="w-20 px-3 py-1 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                </div>
+                                
+                                <div id="sensitivitySection" class="flex items-center justify-between p-4 bg-slate-50 rounded-xl" style="display: none;">
+                                    <div>
+                                        <p class="font-medium text-slate-900">Sensibilidad</p>
+                                        <p class="text-sm text-slate-500">Ajustar detección de pasos</p>
+                                    </div>
+                                    <select id="sensitivitySelect" class="px-3 py-1 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                        <option value="low">Baja</option>
+                                        <option value="medium" selected>Media</option>
+                                        <option value="high">Alta</option>
+                                    </select>
+                                </div>
+                                
+                                <button id="resetDataBtn" class="w-full p-4 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors font-medium" style="display: none;">
+                                    Reiniciar Datos
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class PremiumPedometer {
+            constructor() {
+                this.steps = 0;
+                this.distance = 0;
+                this.calories = 0;
+                this.dailyGoal = 10000;
+                this.sensitivity = 'medium';
+                
+                this.isActive = false;
+                this.healthEnabled = false;
+                this.healthManager = null;
+                this.lastHealthUpdate = 0;
+                this.updateInterval = null;
+                
+                // Variables para fallback al acelerómetro
+                this.sensorEnabled = false;
+                this.lastAcceleration = { x: 0, y: 0, z: 0 };
+                this.stepThreshold = 12;
+                this.stepCooldown = 200;
+                this.lastStepTime = 0;
+                this.smoothingFactor = 0.8;
+                this.smoothedAcceleration = { x: 0, y: 0, z: 0 };
+                
+                // Datos semanales y logros
+                this.weeklyData = [];
+                this.achievements = [
+                    { id: 'first_steps', name: 'Primer Paso', desc: '100 pasos', target: 100, unlocked: false, icon: 'footprints' },
+                    { id: 'daily_goal', name: 'Meta Diaria', desc: 'Completar meta', target: 10000, unlocked: false, icon: 'target' },
+                    { id: 'streak_3', name: 'Constancia', desc: '3 días seguidos', target: 3, unlocked: false, icon: 'calendar-check' },
+                    { id: 'marathon', name: 'Maratonista', desc: '25,000 pasos', target: 25000, unlocked: false, icon: 'award' },
+                    { id: 'weekend_warrior', name: 'Guerrero', desc: 'Meta en fin de semana', target: 1, unlocked: false, icon: 'shield' },
+                    { id: 'early_bird', name: 'Madrugador', desc: '5000 pasos antes de 10am', target: 5000, unlocked: false, icon: 'sunrise' }
+                ];
+                
+                
+                this.loadData();
+                this.initializeUI();
+                this.bindEvents();
+                this.updateUI();
+                this.initializeHealthManager();
+            }
+
+            async initializeHealthManager() {
+                // Verificar si estamos en un entorno Cordova
+                if (!window.cordova && !window.phonegap) {
+                    console.warn('Running in browser - health data not available');
+                    this.healthEnabled = false;
+                    this.updateActivityStatus('Solo disponible en dispositivo móvil', false);
+                    this.updatePermissionCard('Los datos de salud solo están disponibles en dispositivos móviles.', 'Usar Acelerómetro', () => this.requestSensorPermission());
+                    return;
+                }
+
+                // Inicializar HealthKit automáticamente
+                const initializeHealthKit = () => {
+                    const healthPlugin = cordova.plugins && cordova.plugins.health;
+                    
+                    if (!healthPlugin) {
+                        this.updatePermissionCard('Datos de salud no disponibles', 'Usar Acelerómetro', () => this.requestSensorPermission());
+                        return;
+                    }
+                    
+                    // Verificar disponibilidad y solicitar permisos automáticamente
+                    healthPlugin.isAvailable(
+                        (available) => {
+                            if (available) {
+                                healthPlugin.requestAuthorization(
+                                    { 'read': ['steps', 'distance', 'calories.active'] },
+                                    () => {
+                                        // Éxito: activar el sistema de salud
+                                        this.healthEnabled = true;
+                                        this.healthPlugin = healthPlugin;
+                                        document.getElementById('permissionCard').style.display = 'none';
+                                        this.updateActivityStatus('Conectado a HealthKit', true);
+                                        this.updateResetButtonVisibility();
+                                        this.startHealthDataQuery();
+                                    },
+                                    (error) => {
+                                        this.updatePermissionCard('Permisos de salud denegados', 'Usar Acelerómetro', () => this.requestSensorPermission());
+                                    }
+                                );
+                            } else {
+                                this.updatePermissionCard('HealthKit no disponible', 'Usar Acelerómetro', () => this.requestSensorPermission());
+                            }
+                        },
+                        (error) => {
+                            this.updatePermissionCard('Error accediendo a HealthKit', 'Usar Acelerómetro', () => this.requestSensorPermission());
+                        }
+                    );
+                };
+
+                // Esperar a que el dispositivo esté listo
+                if (document.readyState === 'complete' && window.cordova) {
+                    setTimeout(initializeHealthKit, 100);
+                } else {
+                    document.addEventListener('deviceready', initializeHealthKit, false);
+                    setTimeout(() => {
+                        initializeHealthKit();
+                    }, 5000);
+                }
+            }
+
+            startHealthDataQuery() {
+                if (!this.healthPlugin) return;
+                
+                const today = new Date();
+                const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                
+                // Consultar datos de pasos
+                this.healthPlugin.queryAggregated({
+                    startDate: startOfDay,
+                    endDate: today,
+                    dataType: 'steps'
+                }, 
+                (data) => {
+                    this.steps = data.value || 0;
+                    this.distance = this.steps * 0.000762;
+                    this.calories = Math.floor(this.steps * 0.05);
+                    
+                    this.updateUI();
+                    this.saveData();
+                    
+                    // Actualizar estado
+                    this.updateActivityStatus('Datos actualizados', true);
+                    
+                    // Programar próxima actualización
+                    if (!this.updateInterval) {
+                        this.updateInterval = setInterval(() => {
+                            this.startHealthDataQuery();
+                        }, 30000);
+                    }
+                },
+                (error) => {
+                    this.updateActivityStatus('Error obteniendo datos', false);
+                });
+            }
+
+            updatePermissionCard(message, buttonText, buttonAction) {
+                const card = document.getElementById('permissionCard');
+                const messageElement = card.querySelector('p');
+                const buttonElement = card.querySelector('button');
+                
+                messageElement.textContent = message;
+                buttonElement.textContent = buttonText;
+                buttonElement.onclick = buttonAction;
+                card.style.display = 'block';
+            }
+
+            startHealthMonitoring() {
+                if (!this.healthManager || !this.healthEnabled) return;
+                
+                // Obtener datos iniciales
+                this.updateHealthData();
+                
+                // Configurar actualización periódica cada 30 segundos
+                this.updateInterval = setInterval(() => {
+                    this.updateHealthData();
+                }, 30000);
+            }
+
+            async updateHealthData() {
+                if (!this.healthManager || !this.healthEnabled) return;
+                
+                try {
+                    const healthData = await this.healthManager.getTodayHealthData();
+                    
+                    // Actualizar solo si hay cambios significativos
+                    if (healthData.steps !== this.steps || 
+                        Math.abs(healthData.distance - this.distance) > 0.01 || 
+                        healthData.calories !== this.calories) {
+                        
+                        this.steps = healthData.steps;
+                        this.distance = healthData.distance;
+                        this.calories = healthData.calories;
+                        this.lastHealthUpdate = healthData.timestamp;
+                        
+                        this.updateUI();
+                        this.saveData();
+                        
+                        // Actualizar estado de actividad basado en cambios recientes
+                        const timeSinceLastUpdate = Date.now() - this.lastHealthUpdate;
+                        if (timeSinceLastUpdate < 300000) { // 5 minutos
+                            this.updateActivityStatus('Datos Actualizados', true);
+                            this.isActive = true;
+                        } else {
+                            this.updateActivityStatus('En Reposo', true);
+                            this.isActive = false;
+                        }
+                        
+                        // Verificar logro de meta
+                        if (this.steps >= this.dailyGoal && this.steps - healthData.steps < this.dailyGoal) {
+                            this.showSuccess('¡Felicitaciones! Has alcanzado tu meta diaria');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error updating health data:', error);
+                    this.updateActivityStatus('Error Obteniendo Datos', false);
+                }
+            }
+
+            loadData() {
+                const savedData = localStorage.getItem('stepflow-data');
+                if (savedData) {
+                    const data = JSON.parse(savedData);
+                    const today = new Date().toDateString();
+                    
+                    if (data.date === today) {
+                        this.steps = data.steps || 0;
+                        this.distance = data.distance || 0;
+                        this.calories = data.calories || 0;
+                    }
+                }
+                
+                const settings = localStorage.getItem('stepflow-settings');
+                if (settings) {
+                    const config = JSON.parse(settings);
+                    this.dailyGoal = config.dailyGoal || 10000;
+                    this.sensitivity = config.sensitivity || 'medium';
+                    this.updateSensitivity();
+                }
+                
+                // Limpiar caché problemático y regenerar
+                localStorage.removeItem('stepflow-weekly');
+                this.weeklyData = []; // Reset array
+                this.generateWeeklyData();
+                
+                // Cargar logros
+                const achievementsData = localStorage.getItem('stepflow-achievements');
+                if (achievementsData) {
+                    const saved = JSON.parse(achievementsData);
+                    this.achievements.forEach(achievement => {
+                        const savedAchievement = saved.find(a => a.id === achievement.id);
+                        if (savedAchievement) {
+                            achievement.unlocked = savedAchievement.unlocked;
+                        }
+                    });
+                }
+            }
+
+            saveData() {
+                const data = {
+                    date: new Date().toDateString(),
+                    steps: this.steps,
+                    distance: this.distance,
+                    calories: this.calories
+                };
+                localStorage.setItem('stepflow-data', JSON.stringify(data));
+                
+                const settings = {
+                    dailyGoal: this.dailyGoal,
+                    sensitivity: this.sensitivity
+                };
+                localStorage.setItem('stepflow-settings', JSON.stringify(settings));
+                
+                // Guardar datos semanales
+                this.updateWeeklyData();
+                localStorage.setItem('stepflow-weekly', JSON.stringify(this.weeklyData));
+                
+                // Guardar logros
+                localStorage.setItem('stepflow-achievements', JSON.stringify(this.achievements));
+            }
+
+            updateSensitivity() {
+                const sensitivityMap = {
+                    'low': 15,
+                    'medium': 12,
+                    'high': 9
+                };
+                this.stepThreshold = sensitivityMap[this.sensitivity];
+            }
+
+            initializeUI() {
+                lucide.createIcons();
+                this.updateActivityStatus('Sensor Deshabilitado', false);
+            }
+
+            bindEvents() {
+                document.getElementById('enableSensorBtn').addEventListener('click', () => {
+                    this.requestSensorPermission();
+                });
+
+                document.getElementById('settingsBtn').addEventListener('click', () => {
+                    this.openSettings();
+                });
+
+                document.getElementById('closeSettingsBtn').addEventListener('click', () => {
+                    this.closeSettings();
+                });
+
+                document.getElementById('dailyGoalInput').addEventListener('change', (e) => {
+                    this.dailyGoal = parseInt(e.target.value);
+                    this.saveData();
+                    this.updateUI();
+                });
+
+                document.getElementById('sensitivitySelect').addEventListener('change', (e) => {
+                    this.sensitivity = e.target.value;
+                    this.updateSensitivity();
+                    this.saveData();
+                });
+
+                document.getElementById('resetDataBtn').addEventListener('click', () => {
+                    this.resetData();
+                });
+
+                // Close modal on backdrop click
+                document.getElementById('settingsModal').addEventListener('click', (e) => {
+                    if (e.target.id === 'settingsModal') {
+                        this.closeSettings();
+                    }
+                });
+            }
+
+            async requestSensorPermission() {
+                try {
+                    // Si los datos de salud están habilitados, no usar acelerómetro
+                    if (this.healthEnabled) {
+                        this.showError('Los datos de salud ya están habilitados');
+                        return;
+                    }
+                    
+                    if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                        const permission = await DeviceMotionEvent.requestPermission();
+                        if (permission === 'granted') {
+                            this.enableSensor();
+                        } else {
+                            this.showError('Permiso denegado para acceder al sensor de movimiento');
+                        }
+                    } else if (window.DeviceMotionEvent) {
+                        this.enableSensor();
+                    } else {
+                        this.showError('Sensor de movimiento no disponible en este dispositivo');
+                    }
+                } catch (error) {
+                    console.error('Error requesting sensor permission:', error);
+                    this.showError('Error al solicitar permisos del sensor');
+                }
+            }
+
+            enableSensor() {
+                // No habilitar sensor si ya tenemos datos de salud
+                if (this.healthEnabled) {
+                    this.showError('Los datos de salud ya están activos');
+                    return;
+                }
+                
+                if (!this.sensorEnabled) {
+                    window.addEventListener('devicemotion', (event) => {
+                        this.handleDeviceMotion(event);
+                    });
+                    
+                    this.sensorEnabled = true;
+                    document.getElementById('permissionCard').style.display = 'none';
+                    this.updateActivityStatus('Esperando Movimiento (Acelerómetro)', true);
+                    this.updateResetButtonVisibility();
+                    
+                    this.showSuccess('Acelerómetro habilitado como fallback');
+                }
+            }
+
+            handleDeviceMotion(event) {
+                if (!event.accelerationIncludingGravity) return;
+
+                const acceleration = event.accelerationIncludingGravity;
+                
+                // Apply smoothing filter
+                this.smoothedAcceleration.x = this.smoothingFactor * this.smoothedAcceleration.x + 
+                                            (1 - this.smoothingFactor) * (acceleration.x || 0);
+                this.smoothedAcceleration.y = this.smoothingFactor * this.smoothedAcceleration.y + 
+                                            (1 - this.smoothingFactor) * (acceleration.y || 0);
+                this.smoothedAcceleration.z = this.smoothingFactor * this.smoothedAcceleration.z + 
+                                            (1 - this.smoothingFactor) * (acceleration.z || 0);
+
+                // Calculate magnitude of acceleration change
+                const deltaX = this.smoothedAcceleration.x - this.lastAcceleration.x;
+                const deltaY = this.smoothedAcceleration.y - this.lastAcceleration.y;
+                const deltaZ = this.smoothedAcceleration.z - this.lastAcceleration.z;
+                
+                const magnitude = Math.sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ);
+                const currentTime = Date.now();
+
+                // Detect step if magnitude exceeds threshold and cooldown has passed
+                if (magnitude > this.stepThreshold && 
+                    currentTime - this.lastStepTime > this.stepCooldown) {
+                    this.recordStep();
+                    this.lastStepTime = currentTime;
+                }
+
+                this.lastAcceleration = { ...this.smoothedAcceleration };
+                
+                // Update activity status
+                if (magnitude > 2) {
+                    this.updateActivityStatus('Caminando', true);
+                    this.isActive = true;
+                } else if (this.isActive) {
+                    this.updateActivityStatus('En Reposo', true);
+                    this.isActive = false;
+                }
+            }
+
+            recordStep() {
+                // Solo registrar pasos si usamos acelerómetro (no datos de salud)
+                if (this.healthEnabled) {
+                    console.log('Skipping manual step recording - health data active');
+                    return;
+                }
+                
+                this.steps++;
+                this.distance = (this.steps * 0.000762); // Average step = 0.762 meters
+                this.calories = Math.floor(this.steps * 0.05); // Rough estimate
+                
+                this.updateUI();
+                this.saveData();
+                
+                // Animate step counter
+                this.animateStepCounter();
+                
+                // Check goal achievement
+                if (this.steps === this.dailyGoal) {
+                    this.showSuccess('¡Felicitaciones! Has alcanzado tu meta diaria');
+                }
+            }
+
+            animateStepCounter() {
+                const stepElement = document.getElementById('stepCount');
+                stepElement.classList.remove('animate-bounce-gentle');
+                void stepElement.offsetWidth; // Force reflow
+                stepElement.classList.add('animate-bounce-gentle');
+            }
+
+            updateUI() {
+                document.getElementById('stepCount').textContent = this.steps.toLocaleString();
+                document.getElementById('distanceCount').textContent = this.distance.toFixed(2);
+                document.getElementById('calorieCount').textContent = this.calories.toLocaleString();
+                
+                const goalPercentage = Math.min(100, (this.steps / this.dailyGoal) * 100);
+                document.getElementById('goalPercentage').textContent = `${Math.floor(goalPercentage)}%`;
+                
+                // Update progress ring
+                const circumference = 2 * Math.PI * 85;
+                const strokeDasharray = `${(goalPercentage / 100) * circumference} ${circumference}`;
+                document.getElementById('progressRing').style.strokeDasharray = strokeDasharray;
+                
+                // Update active time (estimate based on steps)
+                const activeMinutes = Math.floor(this.steps / 100);
+                document.getElementById('activeTime').textContent = activeMinutes;
+                
+                // Update settings UI
+                document.getElementById('dailyGoalInput').value = this.dailyGoal;
+                document.getElementById('sensitivitySelect').value = this.sensitivity;
+                
+                // Update weekly chart (regenerate data first)
+                this.generateWeeklyData();
+                this.updateWeeklyChart();
+                
+                // Update achievements
+                this.checkAchievements();
+                this.updateAchievementsUI();
+            }
+
+            updateActivityStatus(status, isEnabled = false) {
+                const indicator = document.getElementById('activityIndicator');
+                const statusText = document.getElementById('activityStatus');
+                const updateText = document.getElementById('lastUpdate');
+                
+                statusText.textContent = status;
+                
+                if (isEnabled) {
+                    indicator.className = 'w-4 h-4 bg-success-500 rounded-full animate-pulse';
+                    updateText.textContent = `Actualizado: ${new Date().toLocaleTimeString()}`;
+                } else {
+                    indicator.className = 'w-4 h-4 bg-slate-400 rounded-full';
+                    updateText.textContent = 'Habilita el sensor para comenzar';
+                }
+            }
+            
+            updateResetButtonVisibility() {
+                const resetBtn = document.getElementById('resetDataBtn');
+                const sensitivitySection = document.getElementById('sensitivitySection');
+                
+                // Solo mostrar estos elementos si estamos usando el acelerómetro (no HealthKit)
+                const showAccelerometerControls = this.sensorEnabled && !this.healthEnabled;
+                
+                if (resetBtn) {
+                    resetBtn.style.display = showAccelerometerControls ? 'block' : 'none';
+                }
+                
+                if (sensitivitySection) {
+                    sensitivitySection.style.display = showAccelerometerControls ? 'flex' : 'none';
+                }
+            }
+
+            openSettings() {
+                const modal = document.getElementById('settingsModal');
+                const content = document.getElementById('settingsContent');
+                
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                setTimeout(() => {
+                    content.classList.remove('translate-y-full');
+                }, 10);
+            }
+
+            closeSettings() {
+                const modal = document.getElementById('settingsModal');
+                const content = document.getElementById('settingsContent');
+                
+                content.classList.add('translate-y-full');
+                setTimeout(() => {
+                    modal.classList.add('opacity-0', 'pointer-events-none');
+                }, 300);
+            }
+
+            cleanup() {
+                // Limpiar intervalos
+                if (this.updateInterval) {
+                    clearInterval(this.updateInterval);
+                    this.updateInterval = null;
+                }
+                
+                // Detener monitoreo de salud
+                if (this.healthManager) {
+                    this.healthManager.stopMonitoring();
+                }
+            }
+
+            resetData() {
+                if (confirm('¿Estás seguro de que quieres reiniciar todos los datos? Esta acción no se puede deshacer.')) {
+                    this.steps = 0;
+                    this.distance = 0;
+                    this.calories = 0;
+                    
+                    // Limpiar completamente localStorage
+                    localStorage.removeItem('stepflow-data');
+                    localStorage.removeItem('stepflow-weekly');
+                    localStorage.removeItem('stepflow-achievements');
+                    
+                    // Regenerar todo
+                    this.generateWeeklyData();
+                    this.achievements.forEach(a => a.unlocked = false);
+                    
+                    this.updateUI();
+                    this.saveData();
+                    this.closeSettings();
+                    this.showSuccess('Datos reiniciados correctamente');
+                }
+            }
+
+            showSuccess(message) {
+                this.showNotification(message, 'success');
+            }
+
+            showError(message) {
+                this.showNotification(message, 'error');
+            }
+
+            generateWeeklyData() {
+                this.weeklyData = [];
+                const today = new Date();
+                const todayDayOfWeek = today.getDay(); // 0=Dom, 1=Lun, 2=Mar, 3=Mie, 4=Jue, 5=Vie, 6=Sab
+                
+                // Calcular cuántos días han pasado desde el lunes
+                const daysSinceMonday = todayDayOfWeek === 0 ? 6 : todayDayOfWeek - 1;
+                
+                // Encontrar el lunes de esta semana
+                const monday = new Date(today);
+                monday.setDate(today.getDate() - daysSinceMonday);
+                
+                const dayNames = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+                
+                // Generar solo los días desde el lunes hasta hoy (inclusive)
+                for (let i = 0; i <= daysSinceMonday; i++) {
+                    const date = new Date(monday);
+                    date.setDate(monday.getDate() + i);
+                    
+                    const isToday = date.toDateString() === today.toDateString();
+                    
+                    let steps;
+                    if (isToday) {
+                        steps = this.steps;
+                    } else {
+                        // Datos de ejemplo para días pasados de esta semana
+                        const baseSteps = Math.floor(Math.random() * 6000) + 3000;
+                        steps = Math.random() > 0.3 ? baseSteps + Math.floor(Math.random() * 4000) : baseSteps;
+                    }
+                    
+                    this.weeklyData.push({
+                        date: date.toDateString(),
+                        steps: steps,
+                        dayName: dayNames[i], // L=0, M=1, X=2, J=3, V=4, S=5, D=6
+                        isToday: isToday,
+                        dayIndex: i
+                    });
+                }
+                
+                console.log(`Semana actual desde lunes hasta hoy (${dayNames[daysSinceMonday]}):`);
+                this.weeklyData.forEach((d, index) => {
+                    console.log(`${index}: ${d.dayName} (${d.date}) - ${d.steps} pasos - ${d.isToday ? '← HOY' : ''}`);
+                });
+            }
+            
+            updateWeeklyData() {
+                // Siempre regenerar para asegurar que esté actualizado
+                this.generateWeeklyData();
+            }
+            
+            updateWeeklyChart() {
+                const chartContainer = document.getElementById('weeklyChart');
+                const dayLabels = document.getElementById('weekDayLabels');
+                if (!chartContainer) return;
+                
+                chartContainer.innerHTML = '';
+                
+                if (this.weeklyData.length === 0) {
+                    this.generateWeeklyData();
+                }
+                
+                const maxSteps = Math.max(...this.weeklyData.map(d => d.steps), this.dailyGoal);
+                
+                // Actualizar las etiquetas de los días para que coincidan con los datos
+                if (dayLabels) {
+                    dayLabels.innerHTML = '';
+                    this.weeklyData.forEach((dayData, index) => {
+                        const span = document.createElement('span');
+                        span.textContent = dayData.dayName;
+                        if (dayData.isToday) {
+                            span.className = 'font-bold text-blue-600';
+                        }
+                        dayLabels.appendChild(span);
+                    });
+                }
+                
+                this.weeklyData.forEach((dayData, index) => {
+                    const bar = document.createElement('div');
+                    const height = Math.max(8, (dayData.steps / maxSteps) * 100);
+                    const metGoal = dayData.steps >= this.dailyGoal;
+                    
+                    let barClass;
+                    if (dayData.isToday) {
+                        barClass = 'accent-gradient shadow-lg border-2 border-blue-300';
+                    } else if (metGoal) {
+                        barClass = 'bg-green-400';
+                    } else {
+                        barClass = 'bg-slate-300';
+                    }
+                    
+                    bar.className = `chart-bar flex-1 ${barClass} cursor-pointer rounded-t transition-all duration-200`;
+                    bar.style.height = `${height}%`;
+                    bar.title = `${dayData.dayName}: ${dayData.steps.toLocaleString()} pasos${dayData.isToday ? ' (HOY)' : ''}`;
+                    
+                    // Add hover effect
+                    bar.addEventListener('mouseenter', () => {
+                        this.showStepTooltip(bar, dayData.steps, dayData.dayName, dayData.isToday);
+                    });
+                    
+                    chartContainer.appendChild(bar);
+                });
+            }
+            
+            showStepTooltip(element, steps, dayName = '', isToday = false) {
+                // Remove existing tooltips
+                document.querySelectorAll('.step-tooltip').forEach(tooltip => tooltip.remove());
+                
+                const tooltip = document.createElement('div');
+                tooltip.className = 'step-tooltip absolute bg-slate-800 text-white text-xs px-3 py-2 rounded-lg z-50 shadow-lg';
+                tooltip.textContent = `${dayName || ''} ${steps.toLocaleString()} pasos${isToday ? ' (HOY)' : ''}`;
+                
+                const rect = element.getBoundingClientRect();
+                tooltip.style.left = `${rect.left + rect.width/2}px`;
+                tooltip.style.top = `${rect.top - 35}px`;
+                tooltip.style.transform = 'translateX(-50%)';
+                
+                document.body.appendChild(tooltip);
+                
+                setTimeout(() => tooltip.remove(), 2000);
+            }
+            
+            checkAchievements() {
+                let newAchievements = [];
+                
+                this.achievements.forEach(achievement => {
+                    if (!achievement.unlocked) {
+                        let unlocked = false;
+                        
+                        switch (achievement.id) {
+                            case 'first_steps':
+                                unlocked = this.steps >= achievement.target;
+                                break;
+                            case 'daily_goal':
+                                unlocked = this.steps >= this.dailyGoal;
+                                break;
+                            case 'marathon':
+                                unlocked = this.steps >= achievement.target;
+                                break;
+                            case 'streak_3':
+                                // Check consecutive days meeting goal (including today)
+                                if (this.weeklyData.length >= 3) {
+                                    const today = new Date().toDateString();
+                                    const todayIndex = this.weeklyData.findIndex(day => day.date === today);
+                                    if (todayIndex >= 2) {
+                                        const consecutiveCount = this.checkConsecutiveDays(todayIndex);
+                                        unlocked = consecutiveCount >= 3;
+                                    }
+                                }
+                                break;
+                            case 'weekend_warrior':
+                                const today = new Date().getDay();
+                                unlocked = (today === 0 || today === 6) && this.steps >= this.dailyGoal;
+                                break;
+                            case 'early_bird':
+                                const now = new Date();
+                                unlocked = now.getHours() < 10 && this.steps >= achievement.target;
+                                break;
+                        }
+                        
+                        if (unlocked) {
+                            achievement.unlocked = true;
+                            newAchievements.push(achievement);
+                        }
+                    }
+                });
+                
+                // Show notifications for new achievements only (not on page load)
+                if (newAchievements.length > 0 && this.steps > 0) {
+                    newAchievements.forEach(achievement => {
+                        this.showSuccess(`¡Logro desbloqueado: ${achievement.name}!`);
+                    });
+                }
+            }
+            
+            checkConsecutiveDays(endIndex) {
+                let count = 0;
+                for (let i = endIndex; i >= 0; i--) {
+                    const day = this.weeklyData[i];
+                    if (day.steps >= this.dailyGoal) {
+                        count++;
+                    } else {
+                        break;
+                    }
+                }
+                return count;
+            }
+            
+            updateAchievementsUI() {
+                const grid = document.getElementById('achievementsGrid');
+                if (!grid) return;
+                
+                grid.innerHTML = '';
+                
+                this.achievements.forEach(achievement => {
+                    const badge = document.createElement('div');
+                    badge.className = `p-3 rounded-xl text-center transition-all duration-300 ${
+                        achievement.unlocked 
+                            ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-white shadow-lg' 
+                            : 'bg-slate-100 text-slate-400'
+                    }`;
+                    
+                    badge.innerHTML = `
+                        <i data-lucide="${achievement.icon}" class="w-6 h-6 mx-auto mb-1"></i>
+                        <p class="text-xs font-medium">${achievement.name}</p>
+                        <p class="text-xs opacity-75">${achievement.desc}</p>
+                    `;
+                    
+                    badge.title = achievement.unlocked ? 'Logro completado' : `Progreso: ${this.getAchievementProgress(achievement)}`;
+                    
+                    grid.appendChild(badge);
+                });
+                
+                // Recreate Lucide icons
+                lucide.createIcons();
+            }
+            
+            getAchievementProgress(achievement) {
+                switch (achievement.id) {
+                    case 'first_steps':
+                    case 'marathon':
+                        return `${Math.min(this.steps, achievement.target)}/${achievement.target}`;
+                    case 'daily_goal':
+                        return `${Math.min(this.steps, this.dailyGoal)}/${this.dailyGoal}`;
+                    default:
+                        return 'En progreso';
+                }
+            }
+            
+
+            showNotification(message, type = 'info') {
+                // Create notification element
+                const notification = document.createElement('div');
+                notification.className = `fixed top-4 left-4 right-4 z-50 p-4 rounded-xl shadow-lg transform translate-y-[-100px] transition-all duration-300 ${
+                    type === 'success' ? 'bg-success-500 text-white' : 
+                    type === 'error' ? 'bg-red-500 text-white' : 
+                    'bg-slate-800 text-white'
+                }`;
+                notification.textContent = message;
+                
+                document.body.appendChild(notification);
+                
+                // Animate in
+                setTimeout(() => {
+                    notification.style.transform = 'translateY(0)';
+                }, 10);
+                
+                // Remove after 3 seconds
+                setTimeout(() => {
+                    notification.style.transform = 'translateY(-100px)';
+                    setTimeout(() => {
+                        document.body.removeChild(notification);
+                    }, 300);
+                }, 3000);
+            }
+        }
+
+        // Initialize the application
+        let pedometerApp;
+        document.addEventListener('DOMContentLoaded', () => {
+            pedometerApp = new PremiumPedometer();
+        });
+
+        // Cleanup on app termination
+        window.addEventListener('beforeunload', () => {
+            if (pedometerApp) {
+                pedometerApp.cleanup();
+            }
+        });
+
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', async () => {
+                try {
+                    const registration = await navigator.serviceWorker.register('./sw.js');
+                    console.log('Service Worker registered successfully:', registration);
+                    
+                    // Listen for service worker updates
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // New version available
+                                if (confirm('Nueva versión disponible. ¿Recargar la aplicación?')) {
+                                    window.location.reload();
+                                }
+                            }
+                        });
+                    });
+                } catch (error) {
+                    console.error('Service Worker registration failed:', error);
+                }
+            });
+
+            // Listen for messages from service worker
+            navigator.serviceWorker.addEventListener('message', (event) => {
+                if (event.data && event.data.type === 'BACKGROUND_SYNC') {
+                    console.log('Background sync performed at:', new Date(event.data.timestamp));
+                }
+            });
+        }
+    </script>
+</body>
+</html>
