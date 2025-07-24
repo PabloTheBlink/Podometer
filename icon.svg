@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="256" fill="#1e3c72"/>
+  
+  <!-- Gradient background -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e3c72;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2a5298;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF0080;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#7ED321;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00D4FF;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <circle cx="256" cy="256" r="256" fill="url(#bgGradient)"/>
+  
+  <!-- Activity rings -->
+  <!-- Outer ring -->
+  <circle cx="256" cy="256" r="140" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="20"/>
+  <circle cx="256" cy="256" r="140" fill="none" stroke="#FF0080" stroke-width="20" 
+          stroke-dasharray="879" stroke-dashoffset="220" stroke-linecap="round" 
+          transform="rotate(-90 256 256)"/>
+  
+  <!-- Middle ring -->
+  <circle cx="256" cy="256" r="100" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="18"/>
+  <circle cx="256" cy="256" r="100" fill="none" stroke="#7ED321" stroke-width="18" 
+          stroke-dasharray="628" stroke-dashoffset="157" stroke-linecap="round" 
+          transform="rotate(-90 256 256)"/>
+  
+  <!-- Inner ring -->
+  <circle cx="256" cy="256" r="60" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="16"/>
+  <circle cx="256" cy="256" r="60" fill="none" stroke="#00D4FF" stroke-width="16" 
+          stroke-dasharray="377" stroke-dashoffset="94" stroke-linecap="round" 
+          transform="rotate(-90 256 256)"/>
+  
+  <!-- Center dot -->
+  <circle cx="256" cy="256" r="8" fill="white" opacity="0.9"/>
+  
+  <!-- Walking icon -->
+  <g transform="translate(256, 256)" fill="white" opacity="0.9">
+    <path d="M-8,-20 L-4,-20 L-2,-10 L2,-10 L4,-20 L8,-20 L6,-8 L10,0 L8,2 L4,-6 L2,-6 L0,8 L-2,8 L-4,-6 L-6,-6 L-10,2 L-10,0 L-6,-8 Z" />
+  </g>
+</svg>
