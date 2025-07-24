@@ -128,10 +128,26 @@ const AppController = ScopeJS.Component({
     this.MIN_SPEED = 0.5; // km/h mínima para considerar movimiento
     this.INACTIVITY_TIMEOUT = 60000; // 60 segundos sin movimiento para pausar
     
+    // Variables del mapa
+    this.map = null;
+    this.routeLine = null;
+    this.startMarker = null;
+    this.endMarker = null;
+    this.markersAdded = false;
+    
     // Iniciar sistema automático
     setTimeout(() => {
       this.startAutoTracking();
     }, 1000);
+    
+    // Inicializar mapa después de render
+    setTimeout(() => {
+      this.initMap();
+      // Mostrar ruta histórica si existe
+      if (this.ruta && this.ruta.length > 0) {
+        this.updateMapRoute();
+      }
+    }, 2000);
     
     // Calcular progreso de los anillos
     this.calculateProgress = function() {
@@ -222,6 +238,10 @@ const AppController = ScopeJS.Component({
         this.ruta.push(newPoint);
         this.lastMovement = Date.now();
         this.calculateProgress();
+        
+        // Actualizar ruta en el mapa
+        this.updateMapRoute();
+        
         this.apply();
         
         // Reset timer de inactividad
@@ -287,12 +307,12 @@ const AppController = ScopeJS.Component({
       this.apply();
     };
     
-    // Timer en tiempo real (solo cuando está tracking)
+    // Timer en tiempo real (solo cuando está moviendo)
     this.startTimer = function() {
       if (this.timer) return; // Evitar múltiples timers
       
       this.timer = setInterval(() => {
-        if (this.isTracking) {
+        if (this.isTracking && this.isMoving) {
           this.tiempoMs += 1000;
           this.calculateProgress();
           this.apply();
@@ -381,6 +401,128 @@ const AppController = ScopeJS.Component({
         this.requestWakeLock();
       }
     });
+    
+    // Inicializar mapa
+    this.initMap = function() {
+      if (this.map) return; // Ya inicializado
+      
+      console.log('Inicializando mapa...');
+      const mapElement = document.getElementById('map');
+      if (!mapElement) {
+        console.error('Elemento #map no encontrado');
+        return;
+      }
+      
+      // Coordenadas por defecto (Madrid)
+      const defaultLat = 40.4168;
+      const defaultLng = -3.7038;
+      
+      try {
+        this.map = L.map('map', {
+          zoomControl: false,
+          attributionControl: false,
+          dragging: false,
+          scrollWheelZoom: false,
+          doubleClickZoom: false,
+          boxZoom: false,
+          keyboard: false,
+          tap: false
+        }).setView([defaultLat, defaultLng], 13);
+        
+        // Tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19
+        }).addTo(this.map);
+        
+        console.log('Mapa inicializado correctamente');
+        
+        // Centrar en ruta histórica si existe, sino en ubicación actual
+        if (this.ruta && this.ruta.length > 0) {
+          console.log('Centrando mapa en ruta histórica');
+          const coordinates = this.ruta.map(point => [point.lat, point.lng]);
+          const bounds = L.latLngBounds(coordinates);
+          this.map.fitBounds(bounds, { padding: [50, 50] });
+        } else if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition((position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            this.map.setView([lat, lng], 16);
+            console.log('Mapa centrado en ubicación actual:', lat, lng);
+          });
+        }
+      } catch (error) {
+        console.error('Error inicializando mapa:', error);
+      }
+    };
+    
+    // Actualizar ruta en el mapa
+    this.updateMapRoute = function() {
+      if (!this.map || this.ruta.length < 1) return;
+      
+      console.log('Actualizando ruta en mapa, puntos:', this.ruta.length);
+      
+      // Remover línea anterior
+      if (this.routeLine) {
+        this.map.removeLayer(this.routeLine);
+      }
+      
+      // Crear nueva línea con las coordenadas
+      const coordinates = this.ruta.map(point => [point.lat, point.lng]);
+      
+      if (coordinates.length >= 2) {
+        this.routeLine = L.polyline(coordinates, {
+          color: '#FF0080',
+          weight: 4,
+          opacity: 0.9
+        }).addTo(this.map);
+        
+        console.log('Línea de ruta creada con', coordinates.length, 'puntos');
+      }
+      
+      // Agregar marcadores de inicio y fin
+      if (coordinates.length > 0) {
+        // Solo agregar marcadores al inicio de la sesión, no cada vez
+        if (!this.markersAdded) {
+          // Marcador de inicio (verde)
+          this.startMarker = L.circleMarker(coordinates[0], {
+            radius: 8,
+            fillColor: '#34C759',
+            color: '#FFFFFF',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.8
+          }).addTo(this.map);
+          
+          this.markersAdded = true;
+        }
+        
+        // Actualizar o crear marcador de fin (rojo)
+        if (this.endMarker) {
+          this.map.removeLayer(this.endMarker);
+        }
+        
+        if (coordinates.length > 1) {
+          this.endMarker = L.circleMarker(coordinates[coordinates.length - 1], {
+            radius: 8,
+            fillColor: '#FF3B30',
+            color: '#FFFFFF',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.8
+          }).addTo(this.map);
+        }
+        
+        // Zoom dinámico solo mientras se está moviendo
+        if (this.isMoving) {
+          const bounds = L.latLngBounds(coordinates);
+          this.map.fitBounds(bounds, { 
+            padding: [50, 50],
+            animate: true,
+            duration: 0.5
+          });
+        }
+      }
+    };
     
     
     // Editar máximos
@@ -511,15 +653,15 @@ const AppController = ScopeJS.Component({
         }
       </style>
       
-      <div class="min-h-screen custom-font flex flex-col items-center justify-center" style="background: linear-gradient(to bottom, #1e3c72, #2a5298);">
+      <div class="min-h-screen custom-font flex flex-col items-center justify-center relative" style="background: linear-gradient(to bottom, rgba(30,60,114,0.8), rgba(42,82,152,0.8)); z-index: 10;">
         <!-- Header -->
         <div class="text-center mb-12">
-          <h1 class="title-font text-5xl font-bold text-white mb-4">${this.saludo}</h1>
+          <h1 class="title-font text-5xl font-bold text-white mb-4">${this.saludo}</h1>  
           <p class="text-white text-opacity-80 text-lg font-light">${this.fecha}</p>
         </div>
         
         <!-- Rings -->
-        <div class="relative">
+        <div class="relative flex items-center justify-center">
             <!-- Anillo exterior - Pasos -->
             <svg width="240" height="240" class="transform -rotate-90">
               <circle cx="120" cy="120" r="100" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="16"/>
