@@ -685,9 +685,9 @@ const AppController = ScopeJS.Component({
         </div>
         
         <!-- Stats -->
-        <div class="mt-12 px-8 grid grid-cols-3 gap-6 text-center">
+        <div class="mt-12 px-4 grid grid-cols-3 gap-3 text-center">
           <div>
-            <div class="text-3xl font-bold text-white mb-1">${this.pasos.toLocaleString()}</div>
+            <div class="text-xl font-bold text-white mb-1">${this.pasos.toLocaleString()}</div>
             <div class="text-white text-opacity-40 text-xs mb-2 flex items-center justify-center">
               <span class="mr-1">${this.maxPasos ? this.maxPasos.toLocaleString() : '0'}</span>
               <button onclick="editMaximos('pasos')" class="text-white text-opacity-60 hover:text-opacity-100 transition-opacity">
@@ -696,10 +696,10 @@ const AppController = ScopeJS.Component({
                 </svg>
               </button>
             </div>
-            <div class="text-white text-opacity-70 text-sm uppercase tracking-wide">Pasos</div>
+            <div class="text-white text-opacity-70 text-xs uppercase tracking-wide">Pasos</div>
           </div>
           <div>
-            <div class="text-3xl font-bold text-white mb-1">${this.distancia.toFixed(1)}</div>
+            <div class="text-xl font-bold text-white mb-1">${this.distancia.toFixed(1)}</div>
             <div class="text-white text-opacity-40 text-xs mb-2 flex items-center justify-center">
               <span class="mr-1">${(this.maxDistancia || 0).toFixed(1)}</span>
               <button onclick="editMaximos('distancia')" class="text-white text-opacity-60 hover:text-opacity-100 transition-opacity">
@@ -708,10 +708,10 @@ const AppController = ScopeJS.Component({
                 </svg>
               </button>
             </div>
-            <div class="text-white text-opacity-70 text-sm uppercase tracking-wide">Km</div>
+            <div class="text-white text-opacity-70 text-xs uppercase tracking-wide">Km</div>
           </div>
           <div>
-            <div class="text-3xl font-bold text-white mb-1 font-mono">${this.formatTime(this.tiempoMs)}</div>
+            <div class="text-lg font-bold text-white mb-1 font-mono">${this.formatTime(this.tiempoMs)}</div>
             <div class="text-white text-opacity-40 text-xs mb-2 flex items-center justify-center font-mono">
               <span class="mr-1">${this.formatTime(this.maxTiempoMs || 0)}</span>
               <button onclick="editMaximos('tiempo')" class="text-white text-opacity-60 hover:text-opacity-100 transition-opacity">
@@ -720,7 +720,7 @@ const AppController = ScopeJS.Component({
                 </svg>
               </button>
             </div>
-            <div class="text-white text-opacity-70 text-sm uppercase tracking-wide">Tiempo</div>
+            <div class="text-white text-opacity-70 text-xs uppercase tracking-wide">Tiempo</div>
           </div>
         </div>
         
