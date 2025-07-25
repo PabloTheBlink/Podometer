@@ -126,7 +126,8 @@ const AppController = ScopeJS.Component({
     
     // Parámetros de movimiento
     this.MIN_SPEED = 0.5; // km/h mínima para considerar movimiento
-    this.INACTIVITY_TIMEOUT = 60000; // 60 segundos sin movimiento para pausar
+    this.INACTIVITY_TIMEOUT = 180000; // 3 minutos sin movimiento para pausar
+    this.GPS_TOLERANCE = 30000; // 30 segundos de tolerancia para eventos GPS
     
     // Variables del mapa
     this.map = null;
@@ -270,8 +271,7 @@ const AppController = ScopeJS.Component({
     // Parar movimiento
     this.stopMoving = function() {
       this.isMoving = false;
-      this.estado = 'Parado';
-      this.apply();
+      // No cambiar estado inmediatamente - el timer lo manejará con tolerancia
       
       // Iniciar timer de inactividad
       this.resetInactivityTimer();
@@ -307,14 +307,33 @@ const AppController = ScopeJS.Component({
       this.apply();
     };
     
-    // Timer en tiempo real (solo cuando está moviendo)
+    // Timer en tiempo real (lógica mejorada)
     this.startTimer = function() {
       if (this.timer) return; // Evitar múltiples timers
       
       this.timer = setInterval(() => {
-        if (this.isTracking && this.isMoving) {
-          this.tiempoMs += 1000;
-          this.calculateProgress();
+        if (this.isTracking) {
+          const now = Date.now();
+          
+          // Contar tiempo si:
+          // 1. Está en movimiento, O
+          // 2. Ha tenido movimiento reciente (dentro de GPS_TOLERANCE)
+          const hasRecentMovement = this.lastMovement && (now - this.lastMovement) < this.GPS_TOLERANCE;
+          
+          if (this.isMoving || hasRecentMovement) {
+            this.tiempoMs += 1000;
+            this.calculateProgress();
+            
+            // Actualizar estado visual
+            if (this.isMoving) {
+              this.estado = 'Caminando';
+            } else if (hasRecentMovement) {
+              this.estado = 'Caminando'; // Mantener "Caminando" durante tolerancia GPS
+            }
+          } else if (this.isTracking && !this.isMoving) {
+            this.estado = 'Parado';
+          }
+          
           this.apply();
           
           // Guardar cada 10 segundos
